@@ -57,11 +57,17 @@ export default class GameController {
     this.levelUp(this.team2.characters[1], true)
 
     this.getCharacters = () => {
+      this.team2.characters = this.team2.characters.filter(char => {
+        if (char.health > 0) {
+          return char;
+        }
+      })
+      console.log(this.team2.characters, '2222')
       let result = [
         this.team1.characters[0].health > 0 ? this.team1.characters[0] : undefined,
         this.team1.characters[1].health > 0 ? this.team1.characters[1] : undefined,
-        this.team2.characters[0].health > 0 ? this.team2.characters[0] : undefined,
-        this.team2.characters[1].health > 0 ? this.team2.characters[1] : undefined,
+        this.team2.characters[0] && this.team2.characters[0].health > 0 ? this.team2.characters[0] : undefined,
+        this.team2.characters[1] && this.team2.characters[1].health > 0 ? this.team2.characters[1] : undefined,
       ];
       this.team1.positions = {
         pos1: this.team1.characters[0].health > 0 ? this.team1.characters[0].position : undefined,
@@ -97,12 +103,13 @@ export default class GameController {
 
     this.getCharPosition = () => {
       this.charPosition = []
-      const result = [];
+      let result = [];
+      result = [];
       this.characters.forEach(char => {
         result.push(new PositionedCharacter(char, char.position))
         this.charPosition.push(char.position)
       })
-      // console.log(this.characters)
+      console.log(result, 'result')
 
       return result;
     };
@@ -155,10 +162,14 @@ export default class GameController {
             const damage = Math.floor(Math.max(this.selected.char.attack - char.defence, this.selected.char.attack * 0.1));
             this.gamePlay.showDamage(index, damage).then(() => {
               char.health -= damage;
+              this.getCharacters();
               this.gamePlay.redrawPositions(this.getCharPosition());
               this.selected.isSelected = false;
               this.gamePlay.setCursor('pointer');
               this.isCharMove = false;
+              // console.log(this.team1, '---team1')
+              // console.log(this.team2, '---team2')
+              // console.log(this.characters, 'characters')
               this.npcMove();
             });
           }
@@ -264,23 +275,22 @@ export default class GameController {
         return
       }
       char.level += 1;
-      char.attack = Math.max(char.attack, char.attack * (80 + char.health) / 100);
-      char.defence = Math.max(char.defence, char.defence * (80 + char.defence) / 100);
+      char.attack = Math.floor(Math.max(char.attack, char.attack * (80 + char.health) / 100));
+      char.defence = Math.floor(Math.max(char.defence, char.defence * (80 + char.health) / 100));
       char.health = char.health + 80 > 100 ? 100 : char.health + 80;
     }
 
   }
 
   nextLevel() {
+    console.log('--Новый левл--')
     if (this.level <= 2 && !this.isGameOver) {
       this.level += 1;
-      console.log('Новый левел')
-      console.log(this.team1, 'this.team1');
-      console.log(this.team2, 'this.team2');
       /**
        * Генереруем новую команду противника
        */
       const positionTeam2 = generateStartPositon(this.gamePlay.boardSize, 2, 2);
+
       this.team2 = generateTeam([Daemon, Vampire, Undead], 4, 2);
       this.team2.characters[0].team = 'team2';
       this.team2.characters[1].team = 'team2';
@@ -288,8 +298,6 @@ export default class GameController {
       this.team2.characters[1].position = positionTeam2[1];
       this.levelUp(this.team2.characters[0], true)
       this.levelUp(this.team2.characters[1], true)
-      this.levelUp(this.team1.characters[0], true)
-      this.levelUp(this.team1.characters[1], true)
       // Новые старотовые позиции и добавление новго персонажа при необхожимости
       if (this.characters.length < 2) {
         // Если остался один, повышает ему уровень, создает новую команду из одного персонажа и пушит туда оставшегося
@@ -297,6 +305,8 @@ export default class GameController {
         this.team1 = generateTeam([Bowman, Swordsman, Magician], 4, 1);
         this.team1.characters.push(this.characters[0]);
         let positionTeam1 = generateStartPositon(this.gamePlay.boardSize, 1, 2);
+        this.team1.characters[0].team = 'team1';
+        this.team1.characters[1].team = 'team1';
         this.team1.characters[0].position = positionTeam1[0];
         this.team1.characters[1].position = positionTeam1[1];
       } else {
@@ -307,6 +317,9 @@ export default class GameController {
       this.getCharacters();
       this.gamePlay.redrawPositions(this.getCharPosition());
       this.gamePlay.drawUi(themes[this.level]);
+      console.log(this.team1, '--team1')
+      console.log(this.team2, '--team2')
+      console.log(this.characters, '--characters')
     } else {
       this.isGameOver = true;
     }
