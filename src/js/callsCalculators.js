@@ -1,5 +1,5 @@
-import calculatePass from "./calculatePass";
-import calculateAttack from "./calculateAttack";
+import calculatePass from './calculatePass';
+import calculateAttack from './calculateAttack';
 
 export default function callCalculator(index, charType, isAttack, boardSize = 8) {
   let result;
@@ -22,7 +22,7 @@ export default function callCalculator(index, charType, isAttack, boardSize = 8)
       result = calculateAttack(index, 4, boardSize);
     } else {
       result = calculatePass(index, 1, boardSize);
-    };
+    }
   }
   return result;
 }

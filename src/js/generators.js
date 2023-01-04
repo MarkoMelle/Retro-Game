@@ -1,5 +1,7 @@
 import Team from './Team';
 
+export const getRandom = (arrLength) => Math.floor(Math.random() * arrLength);
+
 export function* characterGenerator(allowedTypes, maxLevel) {
   const typeId = () => {
     const min = 0;
@@ -22,11 +24,9 @@ export function generateTeam(allowedTypes, maxLevel, characterCount) {
   }
   return (new Team(team));
 }
-
 /** Генератор случайной позиции в соотвествующем столбце */
 export function generateStartPositon(boardSize, teamNumber, characterCount) {
   /** Возвращает ключ для получения рандомной позиции */
-  const rand = (arrLength) => Math.floor(Math.random() * arrLength);
 
   if (teamNumber === 1) {
     let positionArr = [];
@@ -46,7 +46,7 @@ export function generateStartPositon(boardSize, teamNumber, characterCount) {
       positionArr.push(i * boardSize + 1);
     }
     for (let i = 0; i < characterCount; i += 1) {
-      const key = rand(positionArr.length);
+      const key = getRandom(positionArr.length);
       const positionNumber = positionArr[key];
       delete positionArr[key];
       compact(positionArr);

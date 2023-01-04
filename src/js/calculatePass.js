@@ -34,7 +34,7 @@ export default function calculatePass(index, amount, boardSize) {
       (index + (index % boardSize <= 6 && index < 55 ? boardSize + 1 : 0)),
       (index + (index % boardSize >= 1 && index < 56 ? boardSize - 1 : 0)),
       (index - (index % boardSize <= 6 && index > 7 ? boardSize - 1 : 0)),
-      (index - (index % boardSize >= 2 && index > 8 ? boardSize + 1 : 0)),
+      (index - (index % boardSize <= 7 && index > 8 ? boardSize + 1 : 0)),
       (index + (index % boardSize <= 6 ? 1 : 0)),
       (index - (index % boardSize >= 1 ? 1 : 0)),
     ];
@@ -54,7 +54,7 @@ export default function calculatePass(index, amount, boardSize) {
       (index + (index % boardSize <= 6 && index < 55 ? boardSize + 1 : 0)),
       (index + (index % boardSize >= 1 && index < 56 ? boardSize - 1 : 0)),
       (index - (index % boardSize <= 6 && index > 7 ? boardSize - 1 : 0)),
-      (index - (index % boardSize >= 2 && index > 8 ? boardSize + 1 : 0)),
+      (index - (index % boardSize <= 7 && index > 8 ? boardSize + 1 : 0)),
       (index + (index % boardSize <= 6 ? 1 : 0)),
       (index - (index % boardSize >= 1 ? 1 : 0)),
     ];
@@ -65,10 +65,16 @@ export default function calculatePass(index, amount, boardSize) {
       (index + (index % boardSize <= 6 && index < 55 ? boardSize + 1 : 0)),
       (index + (index % boardSize >= 1 && index < 56 ? boardSize - 1 : 0)),
       (index - (index % boardSize <= 6 && index > 7 ? boardSize - 1 : 0)),
-      (index - (index % boardSize >= 2 && index > 8 ? boardSize + 1 : 0)),
+      (index - (index % boardSize <= 7 && index > 8 ? boardSize + 1 : 0)),
       (index + (index % boardSize <= 6 ? 1 : 0)),
-      (index - (index % boardSize >= 1 ? 1 : 0))
+      (index - (index % boardSize >= 1 ? 1 : 0)),
     ];
   }
+  result = result.map((e) => {
+    if (e !== index && e >= 0 && e <= 63) {
+      return e;
+    }
+  });
+  result = result.filter((n) => typeof n === 'number');
   return result;
 }
