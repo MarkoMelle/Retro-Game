@@ -95,7 +95,7 @@ export default function calculateAttack(index, amount, boardSize) {
       (index + (index % boardSize <= 6 && index < 55 ? boardSize + 1 : 0)),
       (index + (index % boardSize >= 1 && index < 56 ? boardSize - 1 : 0)),
       (index - (index % boardSize <= 6 && index > 7 ? boardSize - 1 : 0)),
-      (index - (index % boardSize <= 7 && index > 8 ? boardSize + 1 : 0)),
+      (index - (index % boardSize >= 1 && index > 8 ? boardSize + 1 : 0)),
       (index + (index % boardSize <= 6 ? 1 : 0)),
       (index - (index % boardSize >= 1 ? 1 : 0)),
     ];
@@ -128,7 +128,7 @@ export default function calculateAttack(index, amount, boardSize) {
       (index + (index % boardSize <= 6 && index < 55 ? boardSize + 1 : 0)),
       (index + (index % boardSize >= 1 && index < 56 ? boardSize - 1 : 0)),
       (index - (index % boardSize <= 6 && index > 7 ? boardSize - 1 : 0)),
-      (index - (index % boardSize <= 7 && index > 8 ? boardSize + 1 : 0)),
+      (index - (index % boardSize >= 1 && index > 8 ? boardSize + 1 : 0)),
       (index + (index % boardSize <= 6 ? 1 : 0)),
       (index - (index % boardSize >= 1 ? 1 : 0)),
     ];
@@ -139,7 +139,7 @@ export default function calculateAttack(index, amount, boardSize) {
       (index + (index % boardSize <= 6 && index < 55 ? boardSize + 1 : 0)),
       (index + (index % boardSize >= 1 && index < 56 ? boardSize - 1 : 0)),
       (index - (index % boardSize <= 6 && index > 7 ? boardSize - 1 : 0)),
-      (index - (index % boardSize <= 7 && index > 8 ? boardSize + 1 : 0)),
+      (index - (index % boardSize >= 1 && index > 8 ? boardSize + 1 : 0)),
       (index + (index % boardSize <= 6 ? 1 : 0)),
       (index - (index % boardSize >= 1 ? 1 : 0)),
     ];
