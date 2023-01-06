@@ -3,3 +3,4 @@ coverage
 docs
 webpack.config.js
 .github
+__tests__

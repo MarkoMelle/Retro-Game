@@ -1,0 +1,1 @@
+[![Retro-Game](https://github.com/MarkoMelle/Retro-Game/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/MarkoMelle/Retro-Game/actions/workflows/main.yml)

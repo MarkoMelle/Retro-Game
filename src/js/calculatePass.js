@@ -70,11 +70,7 @@ export default function calculatePass(index, amount, boardSize) {
       (index - (index % boardSize >= 1 ? 1 : 0)),
     ];
   }
-  result = result.map((e) => {
-    if (e !== index && e >= 0 && e <= 63) {
-      return e;
-    }
-  });
+  result = result.map((e) => (e !== index && e >= 0 && e <= 63 ? e : false));
   result = result.filter((n) => typeof n === 'number');
   return result;
 }

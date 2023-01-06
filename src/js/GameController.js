@@ -1,5 +1,8 @@
 /* eslint-disable max-len */
+/* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["char"] }] */
+
 import themes from './themes';
+import Team from './Team';
 import PositionedCharacter from './PositionedCharacter';
 import { generateTeam, generateStartPositon, getRandom } from './generators';
 import Bowman from './characters/Bowman';
@@ -11,6 +14,7 @@ import Vampire from './characters/Vampire';
 import callCalculator from './callsCalculators';
 import npcMoveController from './NpcController';
 import GameState from './GameState';
+import advancedCharPars from './advancedCharPars';
 
 const gameState = new GameState();
 export default class GameController {
@@ -19,8 +23,8 @@ export default class GameController {
     this.stateService = stateService;
     this.selected = {};
     this.isCharMove = true;
-    this.charPosition = []
-    this.level = 0
+    this.charPosition = [];
+    this.level = 0;
     this.isGameOver = false;
 
     // Обработчки
@@ -29,22 +33,38 @@ export default class GameController {
     this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
 
     this.gamePlay.addNewGameListener(() => {
-      gameState.from(this);
+      gameState.from(this, this.level + 1);
       this.selected.isSelected = false;
-      this.gamePlay.deselectCell(this.selected.index | 0);
+      this.gamePlay.deselectCell(this.selected.index || 0);
       this.level = 0;
-      this.init()
+      this.init();
       this.isGameOver = false;
       this.isCharMove = true;
-    })
+    });
 
     this.gamePlay.addLoadGameListener(() => {
-
-    })
+      gameState.from(this.stateService.load());
+      this.load(gameState);
+    });
 
     this.gamePlay.addSaveGameListener(() => {
+      this.getCharacters();
+      gameState.from(this);
+      this.stateService.save(gameState);
+    });
+  }
 
-    })
+  load(state) {
+    this.level = state.level;
+    this.isCharMove = state.isCharMove;
+    this.isGameOver = state.isGameOver;
+    this.characters = [];
+    this.selected.isSelected = false;
+    advancedCharPars.call(this, state.characters);
+    this.team1 = new Team([this.characters[0], this.characters[1]]);
+    this.team2 = new Team([this.characters[2], this.characters[3]]);
+    this.gamePlay.drawUi(themes[this.level]);
+    this.gamePlay.redrawPositions(this.getCharPosition());
   }
 
   init() {
@@ -57,7 +77,7 @@ export default class GameController {
     /**
      * Генерируем рандомные позиции
      */
-    let positionTeam1 = generateStartPositon(this.gamePlay.boardSize, 1, 2);
+    const positionTeam1 = generateStartPositon(this.gamePlay.boardSize, 1, 2);
     this.team1.characters[0].team = 'team1';
     this.team1.characters[1].team = 'team1';
     this.team1.characters[0].position = positionTeam1[0];
@@ -65,33 +85,25 @@ export default class GameController {
     /**
      * Повышаем уровни
      */
-    this.levelUp(this.team1.characters[0], true)
-    this.levelUp(this.team1.characters[1], true)
+    GameController.levelUp(this.team1.characters[0], true);
+    GameController.levelUp(this.team1.characters[1], true);
 
     // Team 2
-    let positionTeam2 = generateStartPositon(this.gamePlay.boardSize, 2, 2);
+    const positionTeam2 = generateStartPositon(this.gamePlay.boardSize, 2, 2);
     this.team2 = generateTeam([Daemon, Vampire, Undead], 4, 2);
     this.team2.characters[0].team = 'team2';
     this.team2.characters[1].team = 'team2';
     this.team2.characters[0].position = positionTeam2[0];
     this.team2.characters[1].position = positionTeam2[1];
-    this.levelUp(this.team2.characters[0], true)
-    this.levelUp(this.team2.characters[1], true)
+    GameController.levelUp(this.team2.characters[0], true);
+    GameController.levelUp(this.team2.characters[1], true);
 
     this.getCharacters = () => {
-      //Удаляем мертвых из команды 1
-      this.team1.characters = this.team1.characters.filter(char => {
-        if (char.health > 0) {
-          return char;
-        }
-      })
+      // Удаляем мертвых из команды 1
+      this.team1.characters = this.team1.characters.filter((char) => (char.health > 0 ? char : false));
 
-      //Удаляем мертвых из команды 2
-      this.team2.characters = this.team2.characters.filter(char => {
-        if (char.health > 0) {
-          return char;
-        }
-      })
+      // Удаляем мертвых из команды 2
+      this.team2.characters = this.team2.characters.filter((char) => (char.health > 0 ? char : false));
 
       let result = [
         this.team1.characters[0] && this.team1.characters[0].health > 0 ? this.team1.characters[0] : undefined,
@@ -104,19 +116,18 @@ export default class GameController {
       this.characters = result;
       // Проверка на случай конца раунда или проигрыша игрока
       if (this.characters.length <= 2) {
-        const team1 = []
-        const team2 = []
-        this.characters.forEach(char => {
+        const team1 = [];
+        const team2 = [];
+        this.characters.forEach((char) => {
           if (char.team === 'team1') {
-            team1.push(char)
+            team1.push(char);
           } else {
-            team2.push(char)
+            team2.push(char);
           }
-        })
+        });
         if (team2.length === 0) {
-          this.nextLevel()
+          this.nextLevel();
         } else if (team1.length === 0) {
-
           this.isGameOver = true;
         }
       }
@@ -125,12 +136,12 @@ export default class GameController {
     this.getCharacters();
 
     this.getCharPosition = () => {
-      this.charPosition = []
-      let result = [];
-      this.characters.forEach(char => {
-        result.push(new PositionedCharacter(char, char.position))
-        this.charPosition.push(char.position)
-      })
+      this.charPosition = [];
+      const result = [];
+      this.characters.forEach((char) => {
+        result.push(new PositionedCharacter(char, char.position));
+        this.charPosition.push(char.position);
+      });
       return result;
     };
 
@@ -140,7 +151,7 @@ export default class GameController {
   // Логика
 
   onCellClick(index) {
-    this.gamePlay.deselectCell(this.selected.index | 0);
+    this.gamePlay.deselectCell(this.selected.index || 0);
     if (!this.isGameOver && this.isCharMove) {
       // Опеределение свойств клетки
       this.getCharacters();
@@ -163,8 +174,8 @@ export default class GameController {
 
       if (!indexInfo.isEmpty) {
         this.characters.forEach((char) => {
-          // Выбор персонажа
           if (char.position === index && indexInfo.isChar) {
+            // Выбор персонажа
             this.gamePlay.selectCell(index);
             this.selected.index = index;
             this.selected.type = char.type;
@@ -172,9 +183,8 @@ export default class GameController {
             this.selected.possibleAttack = callCalculator(this.selected.index, this.selected.type, true);
             this.selected.char = char;
             this.selected.isSelected = true;
-          }
-          // Атака
-          else if (this.selected.isSelected && char.position === index && indexInfo.isEnemy && this.selected.possibleAttack.includes(index)) {
+          } else if (this.selected.isSelected && char.position === index && indexInfo.isEnemy && this.selected.possibleAttack.includes(index)) {
+            // Атака
             const damage = Math.round(Math.max(this.selected.char.attack - char.defence, this.selected.char.attack * 0.1));
             this.gamePlay.showDamage(index, damage).then(() => {
               char.health -= damage;
@@ -185,15 +195,13 @@ export default class GameController {
               this.gamePlay.redrawPositions(this.getCharPosition());
               this.npcMove();
             });
-          }
-          // Игнор атаки не в радиусе
-          else if (this.selected.isSelected && indexInfo.isEnemy && !this.selected.possibleAttack.includes(index)) {
+          } else if (this.selected.isSelected && indexInfo.isEnemy && !this.selected.possibleAttack.includes(index)) {
+            // Игнор атаки не в радиусе
             this.gamePlay.selectCell(this.selected.index);
           }
         });
-      }
-      // Ход
-      else if (indexInfo.isEmpty && this.selected.isSelected && this.selected.possiblePass.includes(index)) {
+      } else if (indexInfo.isEmpty && this.selected.isSelected && this.selected.possiblePass.includes(index)) {
+        // Ход
         this.selected.char.position = index;
         this.gamePlay.redrawPositions(this.getCharPosition());
         this.gamePlay.deselectCell(index);
@@ -201,9 +209,8 @@ export default class GameController {
         this.gamePlay.setCursor('pointer');
         this.isCharMove = false;
         this.npcMove();
-      }
-      // Миссклик
-      else {
+      } else {
+        // Миссклик
         this.selected.isSelected = false;
       }
     }
@@ -220,10 +227,10 @@ export default class GameController {
       this.characters.forEach((char) => {
         if (char.position === index && char.team === 'team1') {
           indexInfo.isChar = true;
-          indexInfo.isEmpty = false
+          indexInfo.isEmpty = false;
         } else if (char.position === index && char.team === 'team2') {
           indexInfo.isEnemy = true;
-          indexInfo.isEmpty = false
+          indexInfo.isEmpty = false;
         }
       });
       // Опеределение свойств клетки конец
@@ -249,6 +256,7 @@ export default class GameController {
       });
     }
   }
+
   onCellLeave(index) {
     if (index !== this.selected.index) {
       this.gamePlay.deselectCell(index);
@@ -266,52 +274,50 @@ export default class GameController {
   /**
    * Повышает уровень персонажа
    */
-  levelUp(char, isSpawn = false) {
+  static levelUp(char, isSpawn = false) {
     if (isSpawn) {
       const spawnLevelUp = (amount) => {
         let counter = 0;
-        let callBack = (amount) => {
+        const callBack = () => {
           if (counter <= amount) {
             counter += 1;
 
             const getRandomFactor = () => {
-              let element = 1
-              const result = []
+              let element = 1;
+              const result = [];
               for (let index = 0; index <= 20; index += 1) {
-                result.push(element)
-                element += 0.01
+                result.push(element);
+                element += 0.01;
               }
-              return result
-            }
-            let randomFactor = getRandomFactor();
-            char.attack = Math.round(char.attack * randomFactor[getRandom(randomFactor.length)])//нигде не прописан принцие просчет в случае спавна, было взят рандом до 20%
-            char.defence = Math.round(char.defence * randomFactor[getRandom(randomFactor.length)])//нигде не прописан принцие просчет в случае спавна, было взят рандом до 20%
+              return result;
+            };
+            const randomFactor = getRandomFactor();
+            char.attack = Math.round(char.attack * randomFactor[getRandom(randomFactor.length)]);// нигде не прописан принцие просчет в случае спавна, было взят рандом до 20%
+            char.defence = Math.round(char.defence * randomFactor[getRandom(randomFactor.length)]);// нигде не прописан принцие просчет в случае спавна, было взят рандом до 20%
             callBack(amount);
           }
+        };
+        if (counter !== amount) {
+          callBack(amount);
         }
-        if (counter != amount) {
-          callBack(amount)
-        }
-      }
-      spawnLevelUp(char.level)
+      };
+      spawnLevelUp(char.level);
     } else {
       if (char.level === 4) {
         char.health = char.health + 80 > 100 ? 100 : char.health + 80;
-        return
+        return;
       }
       char.level += 1;
-      char.attack = Math.round(Math.max(char.attack, char.attack * (80 + char.health) / 100));
-      char.defence = Math.round(Math.max(char.defence, char.defence * (80 + char.health) / 100));
+      char.attack = Math.round(Math.max(char.attack, char.attack * (80 + char.health) * 0.01));
+      char.defence = Math.round(Math.max(char.defence, char.defence * (80 + char.health) * 0.01));
       char.health = char.health + 80 > 100 ? 100 : char.health + 80;
     }
-
   }
 
   /**
    * Логика начала нового раунда
    */
   nextLevel() {
-
     this.isCharMove = true;
     if (this.level <= 2 && !this.isGameOver) {
       this.level += 1;
@@ -325,12 +331,12 @@ export default class GameController {
       this.team2.characters[1].team = 'team2';
       this.team2.characters[0].position = positionTeam2[0];
       this.team2.characters[1].position = positionTeam2[1];
-      this.levelUp(this.team2.characters[0], true)
-      this.levelUp(this.team2.characters[1], true)
+      GameController.levelUp(this.team2.characters[0], true);
+      GameController.levelUp(this.team2.characters[1], true);
       // Новые старотовые позиции и добавление новго персонажа при необхожимости
       if (this.characters.length < 2) {
         // Если остался один, повышает ему уровень, создает новую команду из одного персонажа и пушит туда оставшегося
-        this.levelUp(this.characters[0])
+        GameController.levelUp(this.characters[0]);
         this.team1 = generateTeam([Bowman, Swordsman, Magician], 4, 1);
         this.team1.characters.push(this.characters[0]);
         const positionTeam1 = generateStartPositon(this.gamePlay.boardSize, 1, 2);
@@ -339,9 +345,9 @@ export default class GameController {
         this.team1.characters[0].position = positionTeam1[0];
         this.team1.characters[1].position = positionTeam1[1];
       } else {
-        this.characters.forEach(char => {
-          this.levelUp(char);
-        })
+        this.characters.forEach((char) => {
+          GameController.levelUp(char);
+        });
         const positionTeam1 = generateStartPositon(this.gamePlay.boardSize, 1, 2);
         this.team1.characters[0].position = positionTeam1[0];
         this.team1.characters[1].position = positionTeam1[1];

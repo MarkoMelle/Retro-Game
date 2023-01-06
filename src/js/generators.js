@@ -27,10 +27,9 @@ export function generateTeam(allowedTypes, maxLevel, characterCount) {
 /** Генератор случайной позиции в соотвествующем столбце */
 export function generateStartPositon(boardSize, teamNumber, characterCount) {
   /** Возвращает ключ для получения рандомной позиции */
-
+  let positionResult = [];
   if (teamNumber === 1) {
     let positionArr = [];
-    const positionResult = [];
     /** Убирает пропуски в массиве */
     const compact = (Array) => {
       const result = [];
@@ -54,7 +53,8 @@ export function generateStartPositon(boardSize, teamNumber, characterCount) {
     }
     return positionResult;
   } if (teamNumber === 2) {
-    let positionResult = generateStartPositon(boardSize, 1, characterCount);
-    return positionResult = positionResult.map((item) => item + (boardSize - characterCount));
+    positionResult = generateStartPositon(boardSize, 1, characterCount);
+    positionResult = positionResult.map((item) => item + (boardSize - characterCount));
   }
+  return positionResult;
 }

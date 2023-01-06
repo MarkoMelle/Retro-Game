@@ -12,6 +12,8 @@ module.exports = {
     sourceType: 'module',
   },
   rules: {
+    'prefer-destructuring': 'off',
+
     'no-restricted-syntax': [
       'error',
       'LabeledStatement',
