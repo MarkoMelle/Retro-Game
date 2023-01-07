@@ -14,7 +14,6 @@
  */
 export default class Character {
   constructor(level, type) {
-    try {
       this.level = level;
       this.attack = 0;
       this.defence = 0;
@@ -23,6 +22,5 @@ export default class Character {
       if (new.target === Character) {
         throw new Error('Ошибка данных');
       }
-    } catch (e) { console.error(e); }
   }
 }

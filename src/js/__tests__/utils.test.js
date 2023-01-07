@@ -9,7 +9,6 @@ test.each([
   { index: 16, boardSize: 8, expected: 'left' },
   { index: 15, boardSize: 8, expected: 'right' },
   { index: 22, boardSize: 8, expected: 'center' },
-
 ])('should return the correct values', ({ index, boardSize, expected }) => {
   const received = calcTileType(index, boardSize);
   expect(received).toBe(expected);
