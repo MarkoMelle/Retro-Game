@@ -1,13 +1,13 @@
 /* eslint-disable max-len */
 /* eslint no-param-reassign: ["error", { "props": true, "ignorePropertyModificationsFor": ["char"] }] */
 import { getRandom } from './generators';
-import callCalculator from './callsCalculators';
+import callCalculator from './callCalculators';
 
 export default function npcMoveController() {
   if (!this.isCharMove) {
     this.npc = {};
     this.getCharacters();
-    // Проверка возможности атаки и выбор сильного персонажа НАЧАЛО
+    // Checking the ability to attack and choosing a strong character
     let lastSortIndex = 0;
     const getNpcSortedByAttack = () => {
       this.getCharPosition();
@@ -60,9 +60,8 @@ export default function npcMoveController() {
         }
       }
     }
-    // Проверка возможности атаки и выброр сильного персонажа Конец
 
-    // Произвольные ход сильнешим перснажем при отсутсвии возможности нанести атаку
+    // Arbitrary moves by the strongest personage when there is no possibility to attack
     const npcStep = () => {
       this.npc.char = getNpcSortedByAttack();
       this.npc.possibleAttack = callCalculator(this.npc.char.position, this.npc.char.type, true);

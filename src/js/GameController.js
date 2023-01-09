@@ -11,15 +11,16 @@ import Magician from './characters/Magician';
 import Swordsman from './characters/Swordsman';
 import Undead from './characters/Undead';
 import Vampire from './characters/Vampire';
-import callCalculator from './callsCalculators';
+import callCalculator from './callCalculators';
 import npcMoveController from './NpcController';
 import GameState from './GameState';
+import GamePlay from './GamePlay';
 import advancedCharPars from './advancedCharPars';
 
-const gameState = new GameState();
 export default class GameController {
   constructor(gamePlay, stateService) {
     this.gamePlay = gamePlay;
+    this.gameState = new GameState();
     this.stateService = stateService;
     this.selected = {};
     this.isCharMove = true;
@@ -27,13 +28,13 @@ export default class GameController {
     this.level = 0;
     this.isGameOver = false;
 
-    // Обработчки
+    // Event Handlers
     this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
     this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
     this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
 
     this.gamePlay.addNewGameListener(() => {
-      gameState.from(this, this.level + 1);
+      this.gameState.from(this, this.level + 1);
       this.selected.isSelected = false;
       this.gamePlay.deselectCell(this.selected.index || 0);
       this.level = 0;
@@ -43,66 +44,72 @@ export default class GameController {
     });
 
     this.gamePlay.addLoadGameListener(() => {
-      gameState.from(this.stateService.load());
-      this.load(gameState);
+      this.load(this.gameState);
     });
 
     this.gamePlay.addSaveGameListener(() => {
       this.getCharacters();
-      gameState.from(this);
-      this.stateService.save(gameState);
+      this.gameState.from(this);
+      this.stateService.save(this.gameState);
     });
   }
 
+  /**
+   * Loads a saved game session from local storage
+   */
   load(state) {
-    this.level = state.level;
-    this.isCharMove = state.isCharMove;
-    this.isGameOver = state.isGameOver;
-    this.characters = [];
-    this.selected.isSelected = false;
-    advancedCharPars.call(this, state.characters);
-    this.team1 = new Team([this.characters[0], this.characters[1]]);
-    this.team2 = new Team([this.characters[2], this.characters[3]]);
-    this.gamePlay.drawUi(themes[this.level]);
-    this.gamePlay.redrawPositions(this.getCharPosition());
+    try {
+      this.gameState.from(this.stateService.load());
+      this.level = state.level;
+      this.isCharMove = state.isCharMove;
+      this.isGameOver = state.isGameOver;
+      this.characters = [];
+      this.selected.isSelected = false;
+      advancedCharPars.call(this, state.characters);
+      this.team1 = new Team([this.characters[0], this.characters[1]]);
+      this.team2 = new Team([this.characters[2], this.characters[3]]);
+      this.gamePlay.drawUi(themes[this.level]);
+      this.gamePlay.redrawPositions(this.getCharPosition());
+    } catch (e) {
+      GamePlay.showMessage('Сохранения отсутствуют');
+    }
   }
 
+  /**
+  * initializes a new game
+  */
   init() {
     this.gamePlay.drawUi(themes[0]);
+
     // Team 1
-    /**
-     * Генерируем команду
-     */
     this.team1 = generateTeam([Bowman, Swordsman, Magician], 4, 2);
-    /**
-     * Генерируем рандомные позиции
-     */
+    // Generating random positions
     const positionTeam1 = generateStartPositon(this.gamePlay.boardSize, 1, 2);
     this.team1.characters[0].team = 'team1';
     this.team1.characters[1].team = 'team1';
     this.team1.characters[0].position = positionTeam1[0];
     this.team1.characters[1].position = positionTeam1[1];
-    /**
-     * Повышаем уровни
-     */
+    // Increases levels
     GameController.levelUp(this.team1.characters[0], true);
     GameController.levelUp(this.team1.characters[1], true);
 
     // Team 2
     const positionTeam2 = generateStartPositon(this.gamePlay.boardSize, 2, 2);
     this.team2 = generateTeam([Daemon, Vampire, Undead], 4, 2);
+    // Generating random positions
     this.team2.characters[0].team = 'team2';
     this.team2.characters[1].team = 'team2';
     this.team2.characters[0].position = positionTeam2[0];
     this.team2.characters[1].position = positionTeam2[1];
+    // Increases levels
     GameController.levelUp(this.team2.characters[0], true);
     GameController.levelUp(this.team2.characters[1], true);
 
     this.getCharacters = () => {
-      // Удаляем мертвых из команды 1
+      // Removing the dead from team 1
       this.team1.characters = this.team1.characters.filter((char) => (char.health > 0 ? char : false));
 
-      // Удаляем мертвых из команды 2
+      // Removing the dead from team 2
       this.team2.characters = this.team2.characters.filter((char) => (char.health > 0 ? char : false));
 
       let result = [
@@ -114,7 +121,7 @@ export default class GameController {
 
       result = result.filter((e) => e);
       this.characters = result;
-      // Проверка на случай конца раунда или проигрыша игрока
+      // Checking for the end of the round or if a player loses
       if (this.characters.length <= 2) {
         const team1 = [];
         const team2 = [];
@@ -148,34 +155,37 @@ export default class GameController {
     this.gamePlay.redrawPositions(this.getCharPosition());
   }
 
-  // Логика
-
+  /**
+   * Click logic
+   * @param index selected cell index
+   */
   onCellClick(index) {
     this.gamePlay.deselectCell(this.selected.index || 0);
     if (!this.isGameOver && this.isCharMove) {
-      // Опеределение свойств клетки
       this.getCharacters();
-      const indexInfo = {
+
+      // Checking cell properties
+      const cellInfo = {
         isChar: false,
         isEnemy: false,
         isEmpty: false,
       };
       this.characters.forEach((char) => {
         if (char.position === index && char.team === 'team1') {
-          indexInfo.isChar = true;
+          cellInfo.isChar = true;
         } else if (char.position === index && char.team === 'team2') {
-          indexInfo.isEnemy = true;
+          cellInfo.isEnemy = true;
         }
       });
-      if (!indexInfo.isChar && !indexInfo.isEnemy) {
-        indexInfo.isEmpty = true;
+      if (!cellInfo.isChar && !cellInfo.isEnemy) {
+        cellInfo.isEmpty = true;
       }
-      // Опеределение свойств клетки конец
 
-      if (!indexInfo.isEmpty) {
+      // The logic of selecting a character or attacking an enemy
+      if (!cellInfo.isEmpty) {
         this.characters.forEach((char) => {
-          if (char.position === index && indexInfo.isChar) {
-            // Выбор персонажа
+          if (char.position === index && cellInfo.isChar) {
+            // selecting a character
             this.gamePlay.selectCell(index);
             this.selected.index = index;
             this.selected.type = char.type;
@@ -183,8 +193,8 @@ export default class GameController {
             this.selected.possibleAttack = callCalculator(this.selected.index, this.selected.type, true);
             this.selected.char = char;
             this.selected.isSelected = true;
-          } else if (this.selected.isSelected && char.position === index && indexInfo.isEnemy && this.selected.possibleAttack.includes(index)) {
-            // Атака
+          } else if (this.selected.isSelected && char.position === index && cellInfo.isEnemy && this.selected.possibleAttack.includes(index)) {
+            // attacking enemy
             const damage = Math.round(Math.max(this.selected.char.attack - char.defence, this.selected.char.attack * 0.1));
             this.gamePlay.showDamage(index, damage).then(() => {
               char.health -= damage;
@@ -195,13 +205,13 @@ export default class GameController {
               this.gamePlay.redrawPositions(this.getCharPosition());
               this.npcMove();
             });
-          } else if (this.selected.isSelected && indexInfo.isEnemy && !this.selected.possibleAttack.includes(index)) {
-            // Игнор атаки не в радиусе
+          } else if (this.selected.isSelected && cellInfo.isEnemy && !this.selected.possibleAttack.includes(index)) {
+            // Ignore attacks outside the radius
             this.gamePlay.selectCell(this.selected.index);
           }
         });
-      } else if (indexInfo.isEmpty && this.selected.isSelected && this.selected.possiblePass.includes(index)) {
-        // Ход
+      } else if (cellInfo.isEmpty && this.selected.isSelected && this.selected.possiblePass.includes(index)) {
+        // character move
         this.selected.char.position = index;
         this.gamePlay.redrawPositions(this.getCharPosition());
         this.gamePlay.deselectCell(index);
@@ -210,7 +220,7 @@ export default class GameController {
         this.isCharMove = false;
         this.npcMove();
       } else {
-        // Миссклик
+        // Missclick
         this.selected.isSelected = false;
       }
     }
@@ -218,35 +228,35 @@ export default class GameController {
 
   onCellEnter(index) {
     if (!this.isGameOver) {
-      // Опеределение свойств клетки начало
-      const indexInfo = {
+      // Checking cell properties
+      const cellInfo = {
         isChar: false,
         isEnemy: false,
         isEmpty: true,
       };
       this.characters.forEach((char) => {
         if (char.position === index && char.team === 'team1') {
-          indexInfo.isChar = true;
-          indexInfo.isEmpty = false;
+          cellInfo.isChar = true;
+          cellInfo.isEmpty = false;
         } else if (char.position === index && char.team === 'team2') {
-          indexInfo.isEnemy = true;
-          indexInfo.isEmpty = false;
+          cellInfo.isEnemy = true;
+          cellInfo.isEmpty = false;
         }
       });
-      // Опеределение свойств клетки конец
 
+      // Cursor logic
       this.characters.forEach((char) => {
         if (this.selected.isSelected) {
-          if (indexInfo.isEnemy && this.selected.possibleAttack.includes(index)) {
+          if (cellInfo.isEnemy && this.selected.possibleAttack.includes(index)) {
             this.gamePlay.setCursor('crosshair');
-          } else if (indexInfo.isEnemy) {
+          } else if (cellInfo.isEnemy) {
             this.gamePlay.setCursor('not-allowed');
-          } else if (indexInfo.isChar || indexInfo.isEmpty) {
+          } else if (cellInfo.isChar || cellInfo.isEmpty) {
             this.gamePlay.setCursor('pointer');
           } else {
             this.gamePlay.setCursor('auto');
           }
-          if (indexInfo.isEmpty && index !== this.selected.index && this.selected.isSelected && this.selected.possiblePass.includes(index)) {
+          if (cellInfo.isEmpty && index !== this.selected.index && this.selected.isSelected && this.selected.possiblePass.includes(index)) {
             this.gamePlay.selectCell(index, 'green');
           }
         }
@@ -265,14 +275,14 @@ export default class GameController {
   }
 
   /**
-   * Вызывает логику NPC
+   * Calls the NPC's logic
    */
   npcMove() {
     npcMoveController.bind(this)();
   }
 
   /**
-   * Повышает уровень персонажа
+   * Increases the level of a character
    */
   static levelUp(char, isSpawn = false) {
     if (isSpawn) {
@@ -315,14 +325,14 @@ export default class GameController {
   }
 
   /**
-   * Логика начала нового раунда
+   * The logic of starting a new round
    */
   nextLevel() {
     this.isCharMove = true;
     if (this.level <= 2 && !this.isGameOver) {
       this.level += 1;
       /**
-       * Генереруем новую команду противника
+       * Generates a new enemy team
        */
       const positionTeam2 = generateStartPositon(this.gamePlay.boardSize, 2, 2);
 
@@ -333,9 +343,9 @@ export default class GameController {
       this.team2.characters[1].position = positionTeam2[1];
       GameController.levelUp(this.team2.characters[0], true);
       GameController.levelUp(this.team2.characters[1], true);
-      // Новые старотовые позиции и добавление новго персонажа при необхожимости
+      // New starting positions and adding a new character if needed
       if (this.characters.length < 2) {
-        // Если остался один, повышает ему уровень, создает новую команду из одного персонажа и пушит туда оставшегося
+        // If there is one character left, raise his level, create a new team of one character and add the remaining
         GameController.levelUp(this.characters[0]);
         this.team1 = generateTeam([Bowman, Swordsman, Magician], 4, 1);
         this.team1.characters.push(this.characters[0]);
