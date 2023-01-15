@@ -7183,6 +7183,7 @@ var GameController = /*#__PURE__*/function () {
             _this2.nextLevel();
           } else if (team1.length === 0) {
             _this2.isGameOver = true;
+            alert('Game over 😔');
           }
         }
       };
@@ -7345,6 +7346,7 @@ var GameController = /*#__PURE__*/function () {
     function nextLevel() {
       this.isCharMove = true;
       if (this.level <= 2 && !this.isGameOver) {
+        alert('Вы перешли на новый уровень.🆙');
         this.level += 1;
         /**
          * Generates a new enemy team
@@ -7379,7 +7381,8 @@ var GameController = /*#__PURE__*/function () {
         this.getCharacters();
         this.gamePlay.redrawPositions(this.getCharPosition());
         this.gamePlay.drawUi(js_themes[this.level]);
-      } else {
+      } else if (this.level === 3 && !this.isGameOver) {
+        alert('Вы прошли все уровни!🏆');
         this.isGameOver = true;
       }
     }
