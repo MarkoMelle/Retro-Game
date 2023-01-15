@@ -136,6 +136,7 @@ export default class GameController {
           this.nextLevel();
         } else if (team1.length === 0) {
           this.isGameOver = true;
+          alert('Game over 😔');
         }
       }
     };
@@ -330,6 +331,7 @@ export default class GameController {
   nextLevel() {
     this.isCharMove = true;
     if (this.level <= 2 && !this.isGameOver) {
+      alert('Вы перешли на новый уровень.🆙');
       this.level += 1;
       /**
        * Generates a new enemy team
@@ -365,7 +367,8 @@ export default class GameController {
       this.getCharacters();
       this.gamePlay.redrawPositions(this.getCharPosition());
       this.gamePlay.drawUi(themes[this.level]);
-    } else {
+    } else if (this.level === 3 && !this.isGameOver) {
+      alert('Вы прошли все уровни!🏆');
       this.isGameOver = true;
     }
   }
